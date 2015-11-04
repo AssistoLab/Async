@@ -40,16 +40,32 @@ private class GCD {
         // Don't ever use dispatch_get_global_queue(qos_class_main(), 0) re https://gist.github.com/duemunk/34babc7ca8150ff81844
     }
     class func userInteractiveQueue() -> dispatch_queue_t {
-        return dispatch_get_global_queue(QOS_CLASS_USER_INTERACTIVE, 0)
+        if #available(iOS 8.0, *) {
+			return dispatch_get_global_queue(QOS_CLASS_USER_INTERACTIVE, 0)
+        } else {
+            return dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0)
+        }
     }
     class func userInitiatedQueue() -> dispatch_queue_t {
-        return dispatch_get_global_queue(QOS_CLASS_USER_INITIATED, 0)
+		if #available(iOS 8.0, *) {
+			return dispatch_get_global_queue(QOS_CLASS_USER_INITIATED, 0)
+		} else {
+			return dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0)
+		}
     }
     class func utilityQueue() -> dispatch_queue_t {
-        return dispatch_get_global_queue(QOS_CLASS_UTILITY, 0)
+		if #available(iOS 8.0, *) {
+			return dispatch_get_global_queue(QOS_CLASS_UTILITY, 0)
+		} else {
+			return dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_LOW, 0)
+		}
     }
     class func backgroundQueue() -> dispatch_queue_t {
-        return dispatch_get_global_queue(QOS_CLASS_BACKGROUND, 0)
+		if #available(iOS 8.0, *) {
+			return dispatch_get_global_queue(QOS_CLASS_BACKGROUND, 0)
+		} else {
+			return dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_BACKGROUND, 0)
+		}
     }
 }
 
@@ -108,7 +124,12 @@ extension Async {
     private static func asyncNow(block: dispatch_block_t, queue: dispatch_queue_t) -> Async {
         // Create a new block (Qos Class) from block to allow adding a notification to it later (see matching regular Async methods)
         // Create block with the "inherit" type
-        let _block = dispatch_block_create(DISPATCH_BLOCK_INHERIT_QOS_CLASS, block)
+		let _block: dispatch_block_t
+		if #available(iOS 8.0, *) {
+			_block = dispatch_block_create(DISPATCH_BLOCK_INHERIT_QOS_CLASS, block)
+        } else {
+            _block = block
+        }
         // Add block to queue
         dispatch_async(queue, _block)
         // Wrap block in a struct since dispatch_block_t can't be extended
@@ -125,15 +146,21 @@ extension Async {
     }
     private static func at(time: dispatch_time_t, block: dispatch_block_t, queue: dispatch_queue_t) -> Async {
         // See Async.async() for comments
-        let _block = dispatch_block_create(DISPATCH_BLOCK_INHERIT_QOS_CLASS, block)
+		let _block: dispatch_block_t
+		if #available(iOS 8.0, *) {
+			_block = dispatch_block_create(DISPATCH_BLOCK_INHERIT_QOS_CLASS, block)
+		} else {
+			_block = block
+		}
         dispatch_after(time, queue, _block)
         return Async(_block)
     }
 }
 
 
-// MARK: - Async – Regualar methods matching static ones
+// MARK: - Async – Regular methods matching static ones
 
+@available(iOS 8.0, *)
 extension Async {
 
 
@@ -256,6 +283,7 @@ public struct Apply {
 
 // MARK: - qos_class_t
 
+@available(iOS 8.0, *)
 public extension qos_class_t {
 
     // Convenience description of qos_class_t
